@@ -505,10 +505,22 @@ function paint() {
   });
 }
 
-async function tick() {
+async function loadOutlook() {
   try {
     const response = await fetch("/api/outlook", { cache: "no-store" });
-    const data = await response.json();
+    if (response.ok) {
+      const data = await response.json();
+      if (data && (data.ok || data.as_of)) return data;
+    }
+  } catch (err) {}
+  const response = await fetch("outlook.json", { cache: "no-store" });
+  if (!response.ok) throw new Error("Rates not ready");
+  return response.json();
+}
+
+async function tick() {
+  try {
+    const data = await loadOutlook();
     const next = document.getElementById("next");
     if (drawn && data.ok && drawn.as_of === data.as_of && next) {
       next.textContent = clock(data.next_update);
